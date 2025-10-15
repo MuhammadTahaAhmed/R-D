@@ -1,13 +1,15 @@
-
-
 "use client";
 import React from "react";
 import AvatarManager from '../components/AvatarManager';
+import NecropolisBackground from '../components/NecropolisBackground';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <AvatarManager />
+    <div className="min-h-screen relative overflow-x-hidden">
+      {/* <NecropolisBackground /> */}
+      <div className="relative z-10">
+        <AvatarManager />
+      </div>
     </div>
   );
 }

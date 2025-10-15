@@ -5,6 +5,7 @@ import AvatarCreator from './AvatarCreator';
 import UrlUploader from './UrlUploader';
 import ModelViewer from './ModelViewer';
 import { getSavedAvatars, saveAvatar, clearSavedAvatars } from '../services/avatarStorage';
+import NecropolisBackground from './NecropolisBackground';
 
 export default function AvatarManager() {
   const [showCreator, setShowCreator] = useState(false);
@@ -142,11 +143,11 @@ export default function AvatarManager() {
                 </button>
               </div>
             </div>
-            <div className="flex-1 min-h-0 p-4">
+            <div className="flex-1 min-h-0 p-4 " >
               <ModelViewer 
                 modelUrl={selectedAvatar.cloudinaryUrl || selectedAvatar.originalUrl}
                 name={`Avatar ${selectedAvatar.id}`}
-                className="w-full h-full"
+                className="w-full h-full bg-transparent"
               />
             </div>
           </div>
