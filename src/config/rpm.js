@@ -3,16 +3,16 @@
 
 export const RPM_CONFIG = {
   // Your subdomain from Ready Player Me Studio
-  subdomain: process.env.NEXT_PUBLIC_RPM_SUBDOMAIN || 'demo',
+  subdomain: process.env.NEXT_PUBLIC_RPM_SUBDOMAIN ,
   
   // Your App ID from Ready Player Me Studio
-  appId: process.env.NEXT_PUBLIC_RPM_APP_ID || 'demo',
+  appId: process.env.NEXT_PUBLIC_RPM_APP_ID ,
   
   // Your Organization ID from Ready Player Me Studio
-  organizationId: process.env.NEXT_PUBLIC_RPM_ORGANIZATION_ID || 'demo',
+  organizationId: process.env.NEXT_PUBLIC_RPM_ORGANIZATION_ID ,
   
   // API Key for server-side operations (optional)
-  apiKey: process.env.RPM_API_KEY || 'your-api-key',
+  apiKey: process.env.RPM_API_KEY ,
   
   // Avatar Creator URL
   get avatarCreatorUrl() {
