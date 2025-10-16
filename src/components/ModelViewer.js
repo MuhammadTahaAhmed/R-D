@@ -12,6 +12,7 @@ export default function ModelViewer({
   className="relative w-full h-[80vh] overflow-hidden",
   showControls = true,
   backgroundImageUrl = null,
+  backgroundType = 'necropolis',
   enableAnimations = true,
   autoPlayAnimation = true,
   animationSpeed = 1.0,
@@ -73,7 +74,8 @@ export default function ModelViewer({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setClearColor(0x001122, 1);
+    // Transparent canvas so external backgrounds (e.g., Ghost) are visible
+    renderer.setClearColor(0x000000, 0);
     rendererRef.current = renderer;
 
     // Attach renderer canvas to DOM
@@ -106,13 +108,14 @@ export default function ModelViewer({
     accentLight.position.set(0, 5, 0);
     scene.add(accentLight);
 
-    // Necropolis background elements
+    // Necropolis background elements (only if backgroundType === 'necropolis')
     const boneAntennas = [];
     const neonTotems = [];
     const floatingMasks = [];
     let particleSystem = null;
 
     // Create bone antennas with full height coverage
+    if (backgroundType === 'necropolis') {
     for (let i = 0; i < 20; i++) {
       const antenna = new THREE.Group();
       const shaftGeometry = new THREE.CylinderGeometry(0.1, 0.3, 8 + Math.random() * 4, 6);
@@ -142,9 +145,11 @@ export default function ModelViewer({
       scene.add(antenna);
       boneAntennas.push(antenna);
     }
-
+    }
+    
     // Create neon totems with full height coverage
     const pointLights = [];
+    if (backgroundType === 'necropolis') {
     for (let i = 0; i < 15; i++) {
       const totem = new THREE.Group();
       const baseGeometry = new THREE.BoxGeometry(2, 10, 2);
@@ -173,7 +178,8 @@ export default function ModelViewer({
       scene.add(totem);
       neonTotems.push(totem);
     }
-
+    }
+    
     // Create floating masks
     const maskTexts = [
       'ERROR 404: HUMANITY NOT FOUND',
@@ -183,6 +189,7 @@ export default function ModelViewer({
       'BINARY SHAMANS CALLING',
     ];
 
+    if (backgroundType === 'necropolis') {
     for (let i = 0; i < 12; i++) {
       const mask = new THREE.Group();
       const face = new THREE.Mesh(new THREE.PlaneGeometry(3, 4), new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
@@ -214,8 +221,10 @@ export default function ModelViewer({
       scene.add(mask);
       floatingMasks.push(mask);
     }
-
+    }
+    
     // Create particle system
+    if (backgroundType === 'necropolis') {
     const particleCount = 1000;
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
@@ -233,6 +242,7 @@ export default function ModelViewer({
     const material = new THREE.PointsMaterial({ size: 1, vertexColors: true, transparent: true, opacity: 0.3 });
     particleSystem = new THREE.Points(geometry, material);
     scene.add(particleSystem);
+    }
 
 
     // Load the GLB model
@@ -738,37 +748,39 @@ export default function ModelViewer({
       
       const time = Date.now() * 0.001;
       
-      // Animate bone antennas
-      boneAntennas.forEach((antenna, index) => {
-        const ring = antenna.children[antenna.children.length - 1];
-        if (ring) {
-          ring.rotation.y += 0.02;
-          ring.rotation.x = Math.sin(time + index) * 0.3;
-        }
-      });
-      
-      // Animate neon totems
-      neonTotems.forEach((totem, index) => {
-        totem.children.forEach((child, childIndex) => {
-          if (child.material && child.material.emissive) {
-            child.material.emissiveIntensity = 0.3 + Math.sin(time * 2 + index + childIndex) * 0.3;
+      if (backgroundType === 'necropolis') {
+        // Animate bone antennas
+        boneAntennas.forEach((antenna, index) => {
+          const ring = antenna.children[antenna.children.length - 1];
+          if (ring) {
+            ring.rotation.y += 0.02;
+            ring.rotation.x = Math.sin(time + index) * 0.3;
           }
         });
-      });
-      
-      // Animate floating masks
-      floatingMasks.forEach((mask) => {
-        mask.position.y += Math.sin(time * (mask.userData.floatSpeed || 0.02)) * 0.01;
-        mask.rotation.y += mask.userData.rotateSpeed || 0.01;
-        mask.rotation.z = Math.sin(time * 0.5) * 0.1;
-      });
-      
-      // Animate particles
-      if (particleSystem) {
-        particleSystem.rotation.y += 0.001;
-        const positions = particleSystem.geometry.attributes.position.array;
-        for (let i = 1; i < positions.length; i += 3) positions[i] += Math.sin(time + i) * 0.01;
-        particleSystem.geometry.attributes.position.needsUpdate = true;
+        
+        // Animate neon totems
+        neonTotems.forEach((totem, index) => {
+          totem.children.forEach((child, childIndex) => {
+            if (child.material && child.material.emissive) {
+              child.material.emissiveIntensity = 0.3 + Math.sin(time * 2 + index + childIndex) * 0.3;
+            }
+          });
+        });
+        
+        // Animate floating masks
+        floatingMasks.forEach((mask) => {
+          mask.position.y += Math.sin(time * (mask.userData.floatSpeed || 0.02)) * 0.01;
+          mask.rotation.y += mask.userData.rotateSpeed || 0.01;
+          mask.rotation.z = Math.sin(time * 0.5) * 0.1;
+        });
+        
+        // Animate particles
+        if (particleSystem) {
+          particleSystem.rotation.y += 0.001;
+          const positions = particleSystem.geometry.attributes.position.array;
+          for (let i = 1; i < positions.length; i += 3) positions[i] += Math.sin(time + i) * 0.01;
+          particleSystem.geometry.attributes.position.needsUpdate = true;
+        }
       }
       
       // Update animation mixer if it exists
@@ -836,7 +848,7 @@ export default function ModelViewer({
         scene.clear();
       }
     };
-  }, [modelUrl, showControls]);
+  }, [modelUrl, showControls, backgroundType]);
 
   if (error) {
     return (

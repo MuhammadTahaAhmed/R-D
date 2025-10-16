@@ -4,14 +4,16 @@ import { useEffect, useState } from 'react';
 import AvatarCreator from './AvatarCreator';
 import UrlUploader from './UrlUploader';
 import ModelViewer from './ModelViewer';
+import BackgroundRenderer from './BackgroundRenderer';
+import BackgroundSelector from './BackgroundSelector';
 import { getSavedAvatars, saveAvatar, clearSavedAvatars } from '../services/avatarStorage';
-import NecropolisBackground from './NecropolisBackground';
 
 export default function AvatarManager() {
   const [showCreator, setShowCreator] = useState(false);
   const [avatarData, setAvatarData] = useState(null);
   const [saved, setSaved] = useState([]);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [selectedBackground, setSelectedBackground] = useState('necropolis');
 
   useEffect(() => {
     setSaved(getSavedAvatars());
@@ -35,6 +37,10 @@ export default function AvatarManager() {
   const handleError = (error) => {
     console.error('Avatar creation error:', error);
     setShowCreator(false);
+  };
+
+  const handleBackgroundChange = (backgroundId) => {
+    setSelectedBackground(backgroundId);
   };
 
   return (
@@ -129,10 +135,25 @@ export default function AvatarManager() {
       {/* 3D Model Viewer Modal */}
       {selectedAvatar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-6xl h-[90vh] flex flex-col">
-            <div className="flex-shrink-0 p-4 border-b">
+          <div className="rounded-lg w-full max-w-6xl h-[90vh] flex flex-col relative overflow-hidden bg-transparent">
+            {/* Background Renderer */}
+            {selectedBackground !== 'necropolis' ? (
+              <BackgroundRenderer 
+                backgroundType={selectedBackground} 
+                className="absolute inset-0 -z-10 pointer-events-none"
+              />
+            ) : null}
+            
+            <div className="flex-shrink-0 p-4 border-b bg-white/90 backdrop-blur-sm relative z-30">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">3D Avatar Viewer</h2>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-xl font-semibold">3D Avatar Viewer</h2>
+                  <BackgroundSelector 
+                    selectedBackground={selectedBackground}
+                    onBackgroundChange={handleBackgroundChange}
+                    className="relative inline-block z-20"
+                  />
+                </div>
                 <button
                   onClick={() => setSelectedAvatar(null)}
                   className="text-gray-500 hover:text-gray-700"
@@ -143,11 +164,12 @@ export default function AvatarManager() {
                 </button>
               </div>
             </div>
-            <div className="flex-1 min-h-0 p-4 " >
+            <div className="flex-1 min-h-0 p-4 relative">
               <ModelViewer 
                 modelUrl={selectedAvatar.cloudinaryUrl || selectedAvatar.originalUrl}
                 name={`Avatar ${selectedAvatar.id}`}
                 className="w-full h-full bg-transparent"
+                backgroundType={selectedBackground}
               />
             </div>
           </div>
