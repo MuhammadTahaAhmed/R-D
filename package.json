@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint \"src/**/*.{js,jsx}\""
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "^2.25.4",
+    "@amplitude/analytics-browser": "^1.14.0",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "^3.0.4",
