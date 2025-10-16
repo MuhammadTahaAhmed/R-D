@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ModelViewer from './ModelViewer';
 import AvatarCreator from './AvatarCreator';
 import UrlUploader from './UrlUploader';
-import ModelViewer from './ModelViewer';
 import BackgroundRenderer from './BackgroundRenderer';
 import BackgroundSelector from './BackgroundSelector';
 import { getSavedAvatars, saveAvatar, clearSavedAvatars } from '../services/avatarStorage';
 
 export default function AvatarManager() {
   const [showCreator, setShowCreator] = useState(false);
-  const [avatarData, setAvatarData] = useState(null);
+  const [, setAvatarData] = useState(null);
   const [saved, setSaved] = useState([]);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [selectedBackground, setSelectedBackground] = useState('necropolis');
