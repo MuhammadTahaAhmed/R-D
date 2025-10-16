@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
 // NecropolisBackground merged into main scene
 
-export default function ModelViewer({ 
+const ModelViewer = forwardRef(({ 
   modelUrl, 
   name = "3D Avatar",
   className="relative w-full h-[80vh] overflow-hidden",
@@ -17,8 +17,9 @@ export default function ModelViewer({
   autoPlayAnimation = true,
   animationSpeed = 1.0,
   enableIdleAnimation = true,
-  idleAnimationType = "wave"
-}) {
+  idleAnimationType = "wave",
+  onAnimationTrigger = null
+}, ref) => {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -49,6 +50,367 @@ export default function ModelViewer({
   const mixerRef = useRef(null);
   const clockRef = useRef(new THREE.Clock());
   const idleAnimationRef = useRef(null);
+  
+  // Helper functions for creating animations
+  const createHiAnimation = useCallback(() => {
+    if (!modelRef.current) return null;
+    
+    const model = modelRef.current.children[0];
+    if (!model) return null;
+    
+    console.log('Creating hi animation for model:', model);
+    
+    // Create a simple waving animation
+    const hiClip = new THREE.AnimationClip('hi', 2, [
+      // Rotate the model for a wave gesture
+      new THREE.VectorKeyframeTrack(
+        '.rotation[y]',
+        [0, 0.5, 1.0, 1.5, 2.0],
+        [0, 0.3, 0, -0.3, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        '.rotation[x]',
+        [0, 0.5, 1.0, 1.5, 2.0],
+        [0, 0.1, 0, -0.1, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        '.position[y]',
+        [0, 0.5, 1.0, 1.5, 2.0],
+        [0, 0.05, 0, -0.05, 0]
+      )
+    ]);
+    
+    return hiClip;
+  }, []);
+  
+  const createJumpAnimation = useCallback(() => {
+    if (!modelRef.current) return null;
+    
+    const model = modelRef.current.children[0];
+    if (!model) return null;
+    
+    console.log('Creating jump animation for model:', model);
+    
+    // Store the original position to ensure we return to it
+    const originalY = model.position.y;
+    
+    // Create a jump animation with vertical movement and rotation
+    const jumpClip = new THREE.AnimationClip('jump', 1.5, [
+      // Vertical jump movement - ensure it returns to original position
+      new THREE.VectorKeyframeTrack(
+        '.position[y]',
+        [0, 0.3, 0.6, 0.9, 1.2, 1.5],
+        [originalY, originalY + 0.8, originalY + 1.2, originalY + 0.8, originalY + 0.2, originalY]
+      ),
+      // Slight forward lean during jump
+      new THREE.VectorKeyframeTrack(
+        '.rotation[x]',
+        [0, 0.3, 0.6, 0.9, 1.2, 1.5],
+        [0, -0.1, -0.2, -0.1, 0.05, 0]
+      ),
+      // Slight arm movement
+      new THREE.VectorKeyframeTrack(
+        '.rotation[z]',
+        [0, 0.3, 0.6, 0.9, 1.2, 1.5],
+        [0, 0.1, 0.2, 0.1, -0.05, 0]
+      )
+    ]);
+    
+    return jumpClip;
+  }, []);
+  
+  const createIdleAnimation = useCallback(() => {
+    if (!modelRef.current) return null;
+    
+    const model = modelRef.current.children[0];
+    if (!model) return null;
+    
+    // Create a subtle idle breathing animation using the root model
+    const idleClip = new THREE.AnimationClip('idle', 4, [
+      new THREE.VectorKeyframeTrack(
+        '.scale[x]',
+        [0, 1, 2, 3, 4],
+        [1, 1.01, 1, 0.99, 1]
+      ),
+      new THREE.VectorKeyframeTrack(
+        '.scale[y]',
+        [0, 1, 2, 3, 4],
+        [1, 1.01, 1, 0.99, 1]
+      ),
+      new THREE.VectorKeyframeTrack(
+        '.scale[z]',
+        [0, 1, 2, 3, 4],
+        [1, 1.01, 1, 0.99, 1]
+      )
+    ]);
+    
+    return idleClip;
+  }, []);
+  
+  const createWaveAnimation = useCallback(() => {
+    if (!modelRef.current) return null;
+    
+    const model = modelRef.current.children[0];
+    if (!model) return null;
+    
+    // Create a simple wave animation by rotating the arm
+    const waveClip = new THREE.AnimationClip('wave', 2, [
+      new THREE.VectorKeyframeTrack(
+        'mixamorigRightArm.rotation[x]',
+        [0, 0.5, 1, 1.5, 2],
+        [0, 0.5, 0, -0.5, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        'mixamorigRightArm.rotation[y]',
+        [0, 0.5, 1, 1.5, 2],
+        [0, 0.3, 0, -0.3, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        'mixamorigRightArm.rotation[z]',
+        [0, 0.5, 1, 1.5, 2],
+        [0, 1.5, 0, 1.5, 0]
+      )
+    ]);
+    
+    return waveClip;
+  }, []);
+  
+  const createDanceAnimation = useCallback(() => {
+    if (!modelRef.current) return null;
+    
+    const model = modelRef.current.children[0];
+    if (!model) return null;
+    
+    // Create a simple dance animation
+    const danceClip = new THREE.AnimationClip('dance', 3, [
+      new THREE.VectorKeyframeTrack(
+        'mixamorigHips.rotation[y]',
+        [0, 0.5, 1, 1.5, 2, 2.5, 3],
+        [0, 0.3, 0, -0.3, 0, 0.3, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        'mixamorigSpine.rotation[x]',
+        [0, 0.5, 1, 1.5, 2, 2.5, 3],
+        [0, 0.1, 0, -0.1, 0, 0.1, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        'mixamorigLeftArm.rotation[x]',
+        [0, 0.5, 1, 1.5, 2, 2.5, 3],
+        [0, 0.5, 0, -0.5, 0, 0.5, 0]
+      ),
+      new THREE.VectorKeyframeTrack(
+        'mixamorigRightArm.rotation[x]',
+        [0, 0.5, 1, 1.5, 2, 2.5, 3],
+        [0, -0.5, 0, 0.5, 0, -0.5, 0]
+      )
+    ]);
+    
+    return danceClip;
+  }, []);
+  
+  const startIdleAnimation = useCallback(() => {
+    if (!enableIdleAnimation || !mixerRef.current) return;
+    
+    let idleClip;
+    switch (idleAnimationType) {
+      case "wave":
+        idleClip = createWaveAnimation();
+        break;
+      case "dance":
+        idleClip = createDanceAnimation();
+        break;
+      default:
+        idleClip = createIdleAnimation();
+    }
+    
+    if (idleClip) {
+      const action = mixerRef.current.clipAction(idleClip);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.setEffectiveWeight(1);
+      action.setEffectiveTimeScale(animationSpeed * 0.5); // Slower for idle
+      action.play();
+      idleAnimationRef.current = action;
+      console.log('Started idle animation:', idleAnimationType);
+    }
+  }, [enableIdleAnimation, idleAnimationType, animationSpeed, createWaveAnimation, createDanceAnimation, createIdleAnimation]);
+  
+  // Animation control functions
+  const playHiAnimation = useCallback(() => {
+    console.log('playHiAnimation called');
+    console.log('Model ref:', modelRef.current);
+    console.log('Mixer ref:', mixerRef.current);
+    
+    if (!mixerRef.current) {
+      console.log('No mixer found, trying to create one');
+      if (modelRef.current && modelRef.current.children[0]) {
+        const mixer = new THREE.AnimationMixer(modelRef.current.children[0]);
+        mixerRef.current = mixer;
+        console.log('Created new mixer:', mixer);
+      } else {
+        console.log('Cannot create mixer - no model found');
+        return;
+      }
+    }
+    
+    console.log('Stopping current animations');
+    // Stop current animations
+    mixerRef.current.stopAllAction();
+    
+    // Create and play hi animation
+    const hiClip = createHiAnimation();
+    console.log('Created hi clip:', hiClip);
+    if (hiClip) {
+      const action = mixerRef.current.clipAction(hiClip);
+      console.log('Created action:', action);
+      action.setLoop(THREE.LoopOnce);
+      action.setEffectiveWeight(1);
+      action.setEffectiveTimeScale(animationSpeed);
+      action.play();
+      
+      // Return to idle after animation completes
+      action.clampWhenFinished = true;
+      
+      // Listen for animation finish using mixer events
+      const onAnimationFinished = (event) => {
+        if (event.action === action) {
+          console.log('Hi animation finished, returning to idle');
+          
+          // Ensure model returns to original position
+          if (modelRef.current && modelRef.current.children[0]) {
+            const model = modelRef.current.children[0];
+            // Reset position to ensure it's not stuck
+            model.position.y = 0; // Reset to ground level
+            model.rotation.x = 0; // Reset rotation
+            model.rotation.z = 0; // Reset rotation
+            console.log('Reset model position after hi');
+          }
+          
+          mixerRef.current.removeEventListener('finished', onAnimationFinished);
+          startIdleAnimation();
+        }
+      };
+      
+      mixerRef.current.addEventListener('finished', onAnimationFinished);
+      
+      console.log('Playing hi animation');
+    } else {
+      console.log('Failed to create hi animation clip');
+    }
+  }, [createHiAnimation, startIdleAnimation, animationSpeed]);
+  
+  const returnToIdle = useCallback(() => {
+    if (mixerRef.current) {
+      mixerRef.current.stopAllAction();
+      startIdleAnimation();
+      console.log('Returned to idle animation');
+    }
+  }, [startIdleAnimation]);
+  
+  const playJumpAnimation = useCallback(() => {
+    console.log('playJumpAnimation called');
+    console.log('Model ref:', modelRef.current);
+    console.log('Mixer ref:', mixerRef.current);
+    
+    if (!mixerRef.current) {
+      console.log('No mixer found, trying to create one');
+      if (modelRef.current && modelRef.current.children[0]) {
+        const mixer = new THREE.AnimationMixer(modelRef.current.children[0]);
+        mixerRef.current = mixer;
+        console.log('Created new mixer:', mixer);
+      } else {
+        console.log('Cannot create mixer - no model found');
+        return;
+      }
+    }
+    
+    console.log('Stopping current animations');
+    // Stop current animations
+    mixerRef.current.stopAllAction();
+    
+    // Create and play jump animation
+    const jumpClip = createJumpAnimation();
+    console.log('Created jump clip:', jumpClip);
+    if (jumpClip) {
+      const action = mixerRef.current.clipAction(jumpClip);
+      console.log('Created action:', action);
+      action.setLoop(THREE.LoopOnce);
+      action.setEffectiveWeight(1);
+      action.setEffectiveTimeScale(animationSpeed);
+      action.play();
+      
+      // Return to idle after animation completes
+      action.clampWhenFinished = true;
+      
+      // Listen for animation finish using mixer events
+      const onAnimationFinished = (event) => {
+        if (event.action === action) {
+          console.log('Jump animation finished, returning to idle');
+          
+          // Ensure model returns to original position
+          if (modelRef.current && modelRef.current.children[0]) {
+            const model = modelRef.current.children[0];
+            // Reset position to ensure it's not stuck
+            model.position.y = 0; // Reset to ground level
+            model.rotation.x = 0; // Reset rotation
+            model.rotation.z = 0; // Reset rotation
+            console.log('Reset model position after jump');
+          }
+          
+          mixerRef.current.removeEventListener('finished', onAnimationFinished);
+          startIdleAnimation();
+        }
+      };
+      
+      mixerRef.current.addEventListener('finished', onAnimationFinished);
+      
+      console.log('Playing jump animation');
+    } else {
+      console.log('Failed to create jump animation clip');
+    }
+  }, [createJumpAnimation, startIdleAnimation, animationSpeed]);
+  
+  const playAnimation = useCallback((animationName) => {
+    if (mixerRef.current && availableAnimations.includes(animationName)) {
+      // Stop current animation
+      if (currentAnimation) {
+        mixerRef.current.stopAllAction();
+      }
+      
+      // Find and play the selected animation
+      const model = modelRef.current?.children[0];
+      const gltf = model?.userData?.gltf;
+      if (gltf && gltf.animations) {
+        const animation = gltf.animations.find(anim => anim.name === animationName);
+        if (animation) {
+          const action = mixerRef.current.clipAction(animation);
+          action.setEffectiveWeight(1);
+          action.setEffectiveTimeScale(animationSpeed);
+          action.play();
+          setCurrentAnimation(animationName);
+          setIsAnimating(true);
+          console.log('Playing animation:', animationName);
+        }
+      }
+    }
+  }, [mixerRef, availableAnimations, currentAnimation, animationSpeed]);
+  
+  const stopAnimation = useCallback(() => {
+    if (mixerRef.current) {
+      mixerRef.current.stopAllAction();
+      setCurrentAnimation(null);
+      setIsAnimating(false);
+      console.log('Animation stopped');
+    }
+  }, [mixerRef]);
+  
+  // Expose animation functions through ref
+  useImperativeHandle(ref, () => ({
+    playHiAnimation,
+    playJumpAnimation,
+    returnToIdle,
+    playAnimation,
+    stopAnimation
+  }), [playHiAnimation, playJumpAnimation, returnToIdle, playAnimation, stopAnimation]);
 
   useEffect(() => {
     if (!modelUrl || !mountRef.current) return;
@@ -708,39 +1070,6 @@ export default function ModelViewer({
       return idleClip;
     };
     
-    const startIdleAnimation = () => {
-      if (!enableIdleAnimation || !mixerRef.current) return;
-      
-      let idleClip;
-      switch (idleAnimationType) {
-        case "wave":
-          idleClip = createWaveAnimation();
-          break;
-        case "dance":
-          idleClip = createDanceAnimation();
-          break;
-        default:
-          idleClip = createIdleAnimation();
-      }
-      
-      if (idleClip) {
-        const action = mixerRef.current.clipAction(idleClip);
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.setEffectiveWeight(1);
-        action.setEffectiveTimeScale(animationSpeed * 0.5); // Slower for idle
-        action.play();
-        idleAnimationRef.current = action;
-        console.log('Started idle animation:', idleAnimationType);
-      }
-    };
-    
-    const stopIdleAnimation = () => {
-      if (idleAnimationRef.current) {
-        idleAnimationRef.current.stop();
-        idleAnimationRef.current = null;
-        console.log('Stopped idle animation');
-      }
-    };
 
     // Animation loop
     const animate = () => {
@@ -876,4 +1205,6 @@ export default function ModelViewer({
       <div ref={mountRef} className="absolute inset-0 z-10" />
     </div>
   );
-}
+});
+
+export default ModelViewer;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ModelViewer from './ModelViewer';
 import AvatarCreator from './AvatarCreator';
 import UrlUploader from './UrlUploader';
@@ -14,6 +14,7 @@ export default function AvatarManager() {
   const [saved, setSaved] = useState([]);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [selectedBackground, setSelectedBackground] = useState('necropolis');
+  const modelViewerRef = useRef(null);
 
   useEffect(() => {
     setSaved(getSavedAvatars());
@@ -41,6 +42,32 @@ export default function AvatarManager() {
 
   const handleBackgroundChange = (backgroundId) => {
     setSelectedBackground(backgroundId);
+  };
+
+  const handleHiButtonClick = () => {
+    console.log('Hi button clicked!');
+    if (modelViewerRef.current) {
+      console.log('ModelViewer ref found, calling playHiAnimation');
+      modelViewerRef.current.playHiAnimation();
+    } else {
+      console.log('ModelViewer ref not found');
+    }
+  };
+
+  const handleIdleButtonClick = () => {
+    if (modelViewerRef.current) {
+      modelViewerRef.current.returnToIdle();
+    }
+  };
+
+  const handleJumpButtonClick = () => {
+    console.log('Jump button clicked!');
+    if (modelViewerRef.current) {
+      console.log('ModelViewer ref found, calling playJumpAnimation');
+      modelViewerRef.current.playJumpAnimation();
+    } else {
+      console.log('ModelViewer ref not found');
+    }
   };
 
   return (
@@ -153,6 +180,26 @@ export default function AvatarManager() {
                     onBackgroundChange={handleBackgroundChange}
                     className="relative inline-block z-20"
                   />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleIdleButtonClick}
+                      className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                    >
+                      Idle
+                    </button>
+                    <button
+                      onClick={handleHiButtonClick}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Hi
+                    </button>
+                    <button
+                      onClick={handleJumpButtonClick}
+                      className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    >
+                      Jump
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSelectedAvatar(null)}
@@ -166,6 +213,7 @@ export default function AvatarManager() {
             </div>
             <div className="flex-1 min-h-0 p-4 relative">
               <ModelViewer 
+                ref={modelViewerRef}
                 modelUrl={selectedAvatar.cloudinaryUrl || selectedAvatar.originalUrl}
                 name={`Avatar ${selectedAvatar.id}`}
                 className="w-full h-full bg-transparent"
