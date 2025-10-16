@@ -1,10 +1,15 @@
 [build]
   command = "npm run build"
-  publish = "out"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22.20.0"
   NPM_VERSION = "10.9.3"
+
+[[redirects]]
+  from = "/api/generate-avatar"
+  to = "/.netlify/functions/generate-avatar"
+  status = 200
 
 [[redirects]]
   from = "/*"
