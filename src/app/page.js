@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import AvatarManager from '../components/AvatarManager';
 
 export default function Home() {
